@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """Base class for Telegram Objects."""
+from telegram.middleware import middlewares
 
 try:
     import ujson as json
@@ -60,12 +61,7 @@ class TelegramObject(object):
         data = dict()
 
         for key in iter(self.__dict__):
-            if key in ('bot',
-                       '_id_attrs',
-                       '_credentials',
-                       '_decrypted_credentials',
-                       '_decrypted_data',
-                       '_decrypted_secret'):
+            if key == 'bot' or key.startswith('_'):
                 continue
 
             value = self.__dict__[key]
@@ -77,6 +73,7 @@ class TelegramObject(object):
 
         if data.get('from_user'):
             data['from'] = data.pop('from_user', None)
+
         return data
 
     def __eq__(self, other):

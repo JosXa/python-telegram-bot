@@ -21,6 +21,9 @@
 """This module contains an object that represents a Telegram Bot."""
 
 import functools
+
+from telegram.middleware import get_middleware
+
 try:
     import ujson as json
 except ImportError:
@@ -74,6 +77,10 @@ def message(func):
     @functools.wraps(func)
     def decorator(self, *args, **kwargs):
         url, data = func(self, *args, **kwargs)
+
+        middleware = get_middleware('pre_delivery')(kwargs)
+        kwargs = middleware.prepare_data()
+
         if kwargs.get('reply_to_message_id'):
             data['reply_to_message_id'] = kwargs.get('reply_to_message_id')
 
@@ -88,6 +95,8 @@ def message(func):
                 data['reply_markup'] = reply_markup
 
         result = self._request.post(url, data, timeout=kwargs.get('timeout'))
+
+        middleware.postprocess(result)
 
         if result is True:
             return result
@@ -199,6 +208,7 @@ class Bot(TelegramObject):
             :class:`telegram.TelegramError`
 
         """
+        print(get_middleware("pre_delivery"))
         url = '{0}/getMe'.format(self.base_url)
 
         result = self._request.get(url, timeout=timeout)
